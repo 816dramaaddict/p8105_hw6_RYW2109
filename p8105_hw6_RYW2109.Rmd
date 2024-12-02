@@ -1,0 +1,6 @@
+---
+title: "p8105_hw6_RYW2109"
+author: "Rita Wang"
+date: "2024-12-02"
+output: github_document
+---
