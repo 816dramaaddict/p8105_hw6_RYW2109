@@ -113,19 +113,20 @@ data_original = read.csv(file_path) %>%
 ```
 
 ```{r q2_a, echo = FALSE, message = FALSE, warning = FALSE}
-data_df1 = data_original %>% 
-  mutate(
-    city_state = paste(city, state, sep = ", "),
-  )
-
-cleaned = data_df1 %>%
-  filter(!(city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL"))) %>%
+data_df1 = data_original %>%
+  filter(!(city %in% c("Dallas", "Phoenix", "Kansas City", "Tulsa") &
+             state %in% c("TX", "AZ", "MO", "AL"))) %>%
   filter(victim_race %in% c("White", "Black")) %>% 
   mutate(
     homicide_solved = ifelse(grepl("Closed", disposition, ignore.case = TRUE), 1, 0),
       # 1 --> closed --> solved
       # 0 --> open --> not solved
     victim_age = as.numeric(victim_age)
+  )
+
+cleaned = data_df1 %>% 
+  mutate(
+    city_state = paste(city, state, sep = ", "),
   )
 ```
 
@@ -149,3 +150,40 @@ sex_odds_ratio = model_summary %>%
 print(sex_odds_ratio)
 ```
 
+```{r q2_c, echo = FALSE, message = FALSE, warning = FALSE}
+# Logistic regression model using glm()
+get_odds_ratio = function(city_data) {
+  log_reg_model = glm(homicide_solved ~ victim_age + victim_sex + victim_race,
+                    data = cleaned,
+                    family = "binomial")
+
+# Tidy summary of the model
+model_summary = broom::tidy(log_reg_model, conf.int = TRUE)
+print(model_summary)
+
+# Odds ratio and 95% CI for sex
+sex_odds_ratio = model_summary %>%
+  filter(term == "sexMale") %>%
+  mutate(
+    odds_ratio = exp(estimate),
+    conf.low = exp(conf.low),
+    conf.high = exp(conf.high)
+    ) %>%
+  select(term, odds_ratio, conf.low, conf.high)
+}
+
+# For each city
+city_results = data_df1 %>%
+  group_by(city) %>%
+  nest() %>%  # List-column city
+  mutate(
+    odds_ratios = map(data, get_odds_ratio)
+  ) %>%
+  select(city, odds_ratios) %>%
+  unnest(odds_ratios)
+```
+
+```{r q3_data, default_setting, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
+# importing birthweight
+birth_original = read_csv(file = "./Data/birthweight.csv") %>% 
+  janitor::clean_names()
