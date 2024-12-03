@@ -118,7 +118,7 @@ data_df1 = data_original %>%
     city_state = paste(city, state, sep = ", "),
   )
 
-data_df2 = data_df1 %>%
+cleaned = data_df1 %>%
   filter(!(city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL"))) %>%
   filter(victim_race %in% c("White", "Black")) %>% 
   mutate(
@@ -128,3 +128,24 @@ data_df2 = data_df1 %>%
     victim_age = as.numeric(victim_age)
   )
 ```
+
+```{r q2_b, echo = FALSE, message = FALSE, warning = FALSE}
+baltimore_data = cleaned %>%
+  filter(city_state == "Baltimore, MD")
+
+# Logistic regression model using glm()
+log_reg_model = glm(homicide_solved ~ victim_age + victim_sex + victim_race,
+                    data = baltimore_data,
+                    family = "binomial")
+
+# Tidy summary of the model
+model_summary = broom::tidy(log_reg_model, conf.int = TRUE)
+print(model_summary)
+
+# Odds ratio and 95% CI for sex
+sex_odds_ratio = model_summary %>%
+  filter(term == "victim_sexMale") %>% 
+  select(estimate, conf.low, conf.high)
+print(sex_odds_ratio)
+```
+
