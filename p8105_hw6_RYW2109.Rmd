@@ -258,7 +258,7 @@ rmse3
 ```
 
 ```{r}
-model1_fitted = predict(model1, newdata = data_clean)
+model1_fitted = predict(model1, newdata = cleaned)
 model1_residuals = residuals(model1)
 
 # df for plotting
