@@ -115,14 +115,16 @@ data_original = read.csv(file_path) %>%
 ```{r q2_a, echo = FALSE, message = FALSE, warning = FALSE}
 data_df1 = data_original %>% 
   mutate(
-    city_state = paste(city, state, sep = ", ")
+    city_state = paste(city, state, sep = ", "),
   )
 
 data_df2 = data_df1 %>%
-  group_by(city_state) %>%
-  summarise(
-    total_homicides = n(),
-    unsolved_homicides = sum(disposition %in% c("Closed without arrest", "Open/No arrest")),
-    .groups = "drop"
+  filter(!(city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL"))) %>%
+  filter(victim_race %in% c("White", "Black")) %>% 
+  mutate(
+    homicide_solved = ifelse(grepl("Closed", disposition, ignore.case = TRUE), 1, 0),
+      # 1 --> closed --> solved
+      # 0 --> open --> not solved
+    victim_age = as.numeric(victim_age)
   )
 ```
