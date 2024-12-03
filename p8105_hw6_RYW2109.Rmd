@@ -231,8 +231,8 @@ cv_model = function(data, formula, cv_splits) {
   results = cv_splits %>%
     mutate(
       model = map(splits, ~ lm(formula, data = analysis(.))),
-      predictions = map2(model, splits, ~ predict(.x, new_data = assessment(.y))),
-      residuals = map2(predictions, splits, ~ assessment(.x, assessment(.y)))
+      predictions = map2(model, splits, ~ predict(.x, newdata = assessment(.y))),
+      residuals = map2(predictions, splits, ~ ifelse(any(is.na(.x)) | any(is.na(assessment(.y)$bwt)), NA, assessment(.y)$bwt - .x))
     ) %>%
     unnest(residuals) 
   
