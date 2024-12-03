@@ -47,8 +47,58 @@ write.csv(weather_df, file_path, row.names = FALSE)
 weather_df
 ```
 
-```{r q1, echo = FALSE, message = FALSE, warning = FALSE}
+```{r q1_a, echo = FALSE, message = FALSE, warning = FALSE}
+# Bootstrap function
+bootstrap_results = function(data, n_bootstrap = 5000) {
+  boot_results = replicate(n_bootstrap, {
+    sample_data = sample_n(data, size = nrow(data), replace = TRUE)
+    model = lm(tmax ~ tmin, data = sample_data)
+      # Fit linear regression model
+    r_squared = broom::glance(model)$r.squared # R^2
+    # log(beta0 * beta1)
+    coeffs = broom::tidy(model)
+    beta0 = coeffs$estimate[1]
+    beta1 = coeffs$estimate[2]
+    log_beta_product = log(abs(beta0 * beta1))
+    c(r_squared = r_squared, log_beta_product = log_beta_product)
+  })
+  
+  # Convert results into a data frame
+  boot_results_df = as.data.frame(t(boot_results))
+    colnames(boot_results_df) = c("r_squared", "log_beta_product")
+    return(boot_results_df)
+}
 
+# Bootstrap with 5000 samples
+bootstrap_df = bootstrap_results(weather_df, n_bootstrap = 5000)
+
+str(bootstrap_df)
+
+# r_squared plot
+ggplot(bootstrap_df, aes(x = r_squared)) +
+  geom_histogram(bins = 50, fill = "purple", color = "red") +
+  labs(title = "Distribution of R-squared estimates from bootstrapping",
+       x = "R-squared", y = "Frequency")
+
+# log_beta_product
+ggplot(bootstrap_df, aes(x = log_beta_product)) +
+  geom_histogram(bins = 50, fill = "orange", color = "red") +
+  labs(title = "Distribution of log(Beta0 * Beta1) estimates from bootstrapping",
+       x = "log(Beta0 * Beta1)", y = "Frequency")
+
+```
+The R-squared distribution has a normal distribution, which also represents the percentage of variance in tmax that is explained by tmin. The log(Beta0 * Beta1) distribution also has a relative normal distribution. Beta0 represents the intercept of the regression model with Beta1 representing the slope; the product of these two values in the distribution provides an idea of the uncertainty of the interaction between the intercept and slope.
+
+```{r q1_b, echo = FALSE, message = FALSE, warning = FALSE}
+ci_r_squared = quantile(bootstrap_results$r_squared, conf_interval = c(0.025, 0.975))
+ci_log_beta = quantile(bootstrap_results$log_beta, conf_interval = c(0.025, 0.975))
+
+# Print the confidence intervals
+print("95% CI for R-squared:")
+print(r_squared_ci)
+
+print("95% CI for log(Beta0 * Beta1):")
+print(log_beta_product_ci)
 ```
 
 ```{r q2_data, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
