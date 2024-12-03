@@ -90,15 +90,15 @@ ggplot(bootstrap_df, aes(x = log_beta_product)) +
 The R-squared distribution has a normal distribution, which also represents the percentage of variance in tmax that is explained by tmin. The log(Beta0 * Beta1) distribution also has a relative normal distribution. Beta0 represents the intercept of the regression model with Beta1 representing the slope; the product of these two values in the distribution provides an idea of the uncertainty of the interaction between the intercept and slope.
 
 ```{r q1_b, echo = FALSE, message = FALSE, warning = FALSE}
-ci_r_squared = quantile(bootstrap_results$r_squared, conf_interval = c(0.025, 0.975))
-ci_log_beta = quantile(bootstrap_results$log_beta, conf_interval = c(0.025, 0.975))
+ci_r_squared = quantile(bootstrap_df$r_squared, probs = c(0.025, 0.975))
+ci_log_beta = quantile(bootstrap_df$log_beta, probs = c(0.025, 0.975))
 
 # Print the confidence intervals
 print("95% CI for R-squared:")
-print(r_squared_ci)
+print(ci_r_squared)
 
 print("95% CI for log(Beta0 * Beta1):")
-print(log_beta_product_ci)
+print(ci_log_beta)
 ```
 
 ```{r q2_data, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
