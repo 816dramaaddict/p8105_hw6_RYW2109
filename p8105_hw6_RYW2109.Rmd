@@ -154,7 +154,7 @@ print(sex_odds_ratio)
 # Logistic regression model using glm()
 get_odds_ratio = function(city_data) {
   log_reg_model = glm(homicide_solved ~ victim_age + victim_sex + victim_race,
-                    data = cleaned,
+                    data = city_data,
                     family = "binomial")
 
 # Tidy summary of the model
@@ -163,24 +163,43 @@ print(model_summary)
 
 # Odds ratio and 95% CI for sex
 sex_odds_ratio = model_summary %>%
-  filter(term == "sexMale") %>%
+  filter(term == "victim_sexMale") %>%
   mutate(
     odds_ratio = exp(estimate),
     conf.low = exp(conf.low),
     conf.high = exp(conf.high)
     ) %>%
-  select(term, odds_ratio, conf.low, conf.high)
+  select(odds_ratio, conf.low, conf.high)
 }
 
 # For each city
-city_results = data_df1 %>%
-  group_by(city) %>%
+city_results = cleaned %>%
+  group_by(city_state) %>%
   nest() %>%  # List-column city
   mutate(
     odds_ratios = map(data, get_odds_ratio)
   ) %>%
-  select(city, odds_ratios) %>%
+  select(city_state, odds_ratios) %>%
   unnest(odds_ratios)
+```
+
+```{r q2_d, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(city_results, aes(x = odds_ratio, y = reorder(city_state, odds_ratio))) +
+  geom_point(aes(color = odds_ratio), size = 4) +  # Plot OR as points
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+  labs(
+    title = "Estimated Odds Ratios (ORs) for Solving Homicides: Male vs Female Victims",
+    x = "Odds Ratio",
+    y = "City",
+    caption = "95% Confidence Intervals shown as error bars"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 8),
+    plot.title = element_text(hjust = 0.5),
+    plot.caption = element_text(hjust = 0.5)
+  ) +
+  scale_color_gradient(low = "red", high = "blue")
 ```
 
 ```{r q3_data, default_setting, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
