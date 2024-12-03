@@ -9,6 +9,7 @@ library(tidyverse)
 library(ggplot2)
 library(purrr)
 library(p8105.datasets)
+library(rsample)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -206,3 +207,71 @@ ggplot(city_results, aes(x = odds_ratio, y = reorder(city_state, odds_ratio))) +
 # importing birthweight
 birth_original = read_csv(file = "./Data/birthweight.csv") %>% 
   janitor::clean_names()
+
+cleaned = birth_original %>% 
+  mutate(
+    babysex = factor(babysex, levels = c(1, 2), labels = c("Male", "Female")),
+    frace = factor(frace, levels = c(1, 2, 3, 4, 8, 9), labels = c("White", "Black", "Asian", "Puerto Rican", "Other", "Unknown")),
+    mrace = factor(mrace, levels = c(1, 2, 3, 4, 8), labels = c("White", "Black", "Asian", "Puerto Rican", "Other")),
+    malform = factor(malform, levels = c(0, 1), labels = c("No", "Yes"))
+  ) %>%
+  filter(!is.na(bwt), !is.na(babysex), !is.na(gaweeks))
+
+# Check for missing values
+colSums(is.na(cleaned))
+```
+```{r q3_a, echo = FALSE, message = FALSE, warning = FALSE}
+# Linear regression model with birth weight as the outcome
+model1 = lm(bwt ~ babysex + delwt + fincome + gaweeks + smoken + malform + momage + mheight + ppwt + wtgain, data = cleaned)
+
+# Cross-validation
+cv_splits = vfold_cv(cleaned, v = 10)
+
+cv_model = function(data, formula, cv_splits) {
+  results = cv_splits %>%
+    mutate(
+      model = map(splits, ~ lm(formula, data = analysis(.))),
+      predictions = map2(model, splits, ~ predict(.x, new_data = assessment(.y))),
+      residuals = map2(predictions, splits, ~ assessment(.x, assessment(.y)))
+    ) %>%
+    unnest(residuals) 
+  
+# Error metrics
+  rmse = sqrt(mean(results$resid^2))
+  return(rmse)
+}
+
+# Formulas for the models
+formula1 = bwt ~ babysex + delwt + fincome + gaweeks + smoken + malform + momage + mheight + ppwt + wtgain
+formula2 = bwt ~ blength + gaweeks
+formula3 = bwt ~ bhead * blength * babysex  # Interaction between head, length, and sex
+
+# Cross-validation RMSE for each model
+rmse1 = cv_model(cleaned, formula1, cv_splits)
+rmse2 = cv_model(cleaned, formula2, cv_splits)
+rmse3 = cv_model(cleaned, formula3, cv_splits)
+
+# Print the RMSE for each model
+rmse1
+rmse2
+rmse3
+```
+
+```{r}
+model1_fitted = predict(model1, newdata = data_clean)
+model1_residuals = residuals(model1)
+
+# df for plotting
+model1_plot_data = tibble(
+  fitted = model1_fitted,
+  residuals = model1_residuals
+)
+
+# Plot residuals vs fitted values
+ggplot(model1_plot_data, aes(x = fitted, y = residuals)) +
+  geom_point(alpha = 0.6) +
+  labs(title = "Residuals vs Fitted Values", x = "Fitted Values", y = "Residuals") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  theme_minimal()
+```
+
