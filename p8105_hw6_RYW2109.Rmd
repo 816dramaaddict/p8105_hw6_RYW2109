@@ -8,7 +8,7 @@ output: github_document
 library(tidyverse)
 library(ggplot2)
 library(purrr)
-library(rnoaa)
+library(p8105.datasets)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -53,9 +53,9 @@ weather_df
 
 ```{r q2_data, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
   # importing data
-url = "https://github.com/washingtonpost/data-homicides/blob/master/homicide-data.csv"
+url = "https://raw.githubusercontent.com/washingtonpost/data-homicides/refs/heads/master/homicide-data.csv"
 
-file_path = file.path(directory, "homicide-data.csv")
+file_path = file.path(data_file, "homicide-data.csv")
 download.file(url, destfile = file_path, method = "libcurl")
 
 data_original = read.csv(file_path) %>% 
